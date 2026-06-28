@@ -32,6 +32,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         // NSApp.servicesProvider = CuteRecordService.shared  // 注释掉：触发 macOS 扫描 ~/Documents
         // NSUpdateDynamicServices()  // 注释掉：首次调用可能触发 macOS 扫描 ~/Documents
 
+        // Migrate UserDefaults from old CueRecord bundle ID (one-time)
+        migrateUserDefaultsIfNeeded()
+
         if CuteRecordService.shared.launchedExternally {
             CuteRecordService.shared.hideMainWindow()
         }
@@ -72,6 +75,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         CuteRecordService.shared.saveFile()
         NSApp.terminate(nil)
         return false
+    }
+
+    // MARK: - UserDefaults Migration
+
+    /// One-time migration of UserDefaults from old CueRecord bundle ID (com.nolanlai.cuterecord).
+    private func migrateUserDefaultsIfNeeded() {
+        let migrationKey = "com.worth01.cuterecord.migrationDidRun"
+        guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
+
+        let oldBundleID = "com.nolanlai.cuterecord"
+        guard let oldPrefs = CFPreferencesCopyMultiple(nil,
+                                                        oldBundleID as CFString,
+                                                        kCFPreferencesCurrentUser,
+                                                        kCFPreferencesAnyHost) as? [String: Any],
+              !oldPrefs.isEmpty else {
+            // No old prefs to migrate — mark done to avoid repeated attempts
+            UserDefaults.standard.set(true, forKey: migrationKey)
+            return
+        }
+
+        for (key, value) in oldPrefs {
+            UserDefaults.standard.set(value, forKey: key)
+        }
+        UserDefaults.standard.set(true, forKey: migrationKey)
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

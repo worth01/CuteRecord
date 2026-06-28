@@ -95,6 +95,10 @@ final class AIProviderAPIKeyStore {
     private let legacyDeepSeekService = "com.worth01.cuterecord.deepseek"
     private let legacyDeepSeekAccount = "api-key"
 
+    // Migration: old Keychain service IDs from CueRecord (com.nolanlai.*)
+    private let oldService = "com.nolanlai.cuterecord.ai-provider"
+    private let oldDeepSeekService = "com.nolanlai.cuterecord.deepseek"
+
     private init() {}
 
     func hasAPIKey(for account: String) -> Bool {
@@ -102,15 +106,37 @@ final class AIProviderAPIKeyStore {
     }
 
     func loadAPIKey(for account: String) -> String? {
+        // 1. Try new service
         if let key = loadAPIKey(account: account, service: service) {
             return key
         }
 
-        if account == "deepseek" {
-            return loadAPIKey(account: legacyDeepSeekAccount, service: legacyDeepSeekService)
+        // 2. Try deepseek-specific new service
+        if account == "deepseek",
+           let key = loadAPIKey(account: legacyDeepSeekAccount, service: legacyDeepSeekService) {
+            return key
+        }
+
+        // 3. Migration: try old com.nolanlai.* services and migrate to new
+        if let key = loadAPIKey(account: account, service: oldService) {
+            try? migrateKey(key, account: account, fromService: oldService)
+            return key
+        }
+
+        if account == "deepseek",
+           let key = loadAPIKey(account: legacyDeepSeekAccount, service: oldDeepSeekService) {
+            try? migrateKey(key, account: legacyDeepSeekAccount, fromService: oldDeepSeekService)
+            return key
         }
 
         return nil
+    }
+
+    /// Migrate an API key from an old Keychain service to the current one, then delete the old entry.
+    private func migrateKey(_ key: String, account: String, fromService oldSvc: String) throws {
+        try saveAPIKey(key, for: account)
+        var query = baseQuery(account: account, service: oldSvc)
+        SecItemDelete(query as CFDictionary)
     }
 
     private func loadAPIKey(account: String, service: String) -> String? {

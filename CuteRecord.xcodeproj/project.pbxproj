@@ -315,7 +315,7 @@
 					"-lsherpa-onnx-c-api",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.nolanlai.cuterecord;
+				PRODUCT_BUNDLE_IDENTIFIER = com.worth01.cuterecord;
 				PRODUCT_NAME = CuteRecord;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -362,7 +362,7 @@
 					"-lsherpa-onnx-c-api",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.nolanlai.cuterecord;
+				PRODUCT_BUNDLE_IDENTIFIER = com.worth01.cuterecord;
 				PRODUCT_NAME = CuteRecord;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
